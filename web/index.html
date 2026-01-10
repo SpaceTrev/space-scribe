@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpaceScribe - YouTube Transcription Platform</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .hero {
+            text-align: center;
+            padding: 60px 20px;
+            color: white;
+        }
+
+        .hero h1 {
+            font-size: 3.5em;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .hero p {
+            font-size: 1.3em;
+            margin-bottom: 40px;
+            opacity: 0.9;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            margin: 20px 0;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .transcribe-form {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        .transcribe-form input {
+            flex: 1;
+            padding: 15px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .transcribe-form input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 40px 0;
+        }
+
+        .feature {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+
+        .feature:hover {
+            transform: translateY(-5px);
+        }
+
+        .feature h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 1.3em;
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            display: none;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .result h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .result-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .result-info-item {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+        }
+
+        .result-info-item strong {
+            display: block;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .transcript-preview {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .loader {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+            display: none;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .footer {
+            text-align: center;
+            padding: 40px 20px;
+            color: white;
+            opacity: 0.8;
+        }
+
+        .footer a {
+            color: white;
+            text-decoration: none;
+            border-bottom: 1px solid white;
+        }
+    </style>
+</head>
+<body>
+    <div class="hero">
+        <div class="container">
+            <h1>🚀 SpaceScribe</h1>
+            <p>Comprehensive YouTube Video Transcription Platform</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <h2 style="margin-bottom: 20px; color: #667eea;">Quick Start: Transcribe a Video</h2>
+
+            <div class="transcribe-form">
+                <input
+                    type="text"
+                    id="videoUrl"
+                    placeholder="Enter YouTube URL or Video ID..."
+                    value=""
+                >
+                <button class="btn" onclick="transcribeVideo()">Transcribe</button>
+            </div>
+
+            <div id="status" class="status"></div>
+            <div id="loader" class="loader"></div>
+            <div id="result" class="result"></div>
+        </div>
+
+        <div class="features">
+            <div class="feature">
+                <h3>🎯 Dual Methods</h3>
+                <p>YouTube API for captions, Whisper for audio transcription</p>
+            </div>
+            <div class="feature">
+                <h3>🤖 NLP Processing</h3>
+                <p>Automatic entity extraction and keyword analysis</p>
+            </div>
+            <div class="feature">
+                <h3>📊 Trading Analysis</h3>
+                <p>Extract indicators, strategies, and market concepts</p>
+            </div>
+            <div class="feature">
+                <h3>🔍 Smart Search</h3>
+                <p>Full-text search across all transcripts</p>
+            </div>
+            <div class="feature">
+                <h3>📦 Multiple Exports</h3>
+                <p>JSON, CSV, TXT, Markdown, SRT, LLM formats</p>
+            </div>
+            <div class="feature">
+                <h3>🔌 MCP Integration</h3>
+                <p>Model Context Protocol for LLM access</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2 style="margin-bottom: 20px; color: #667eea;">API Endpoints</h2>
+            <ul style="list-style: none;">
+                <li style="padding: 10px 0; border-bottom: 1px solid #eee;">
+                    <strong>POST /api/v1/transcribe</strong> - Transcribe single video
+                </li>
+                <li style="padding: 10px 0; border-bottom: 1px solid #eee;">
+                    <strong>POST /api/v1/batch</strong> - Batch process videos
+                </li>
+                <li style="padding: 10px 0; border-bottom: 1px solid #eee;">
+                    <strong>GET /api/v1/transcripts</strong> - List all transcripts
+                </li>
+                <li style="padding: 10px 0; border-bottom: 1px solid #eee;">
+                    <strong>GET /api/v1/search</strong> - Search transcripts
+                </li>
+                <li style="padding: 10px 0;">
+                    <strong>GET /api/v1/export</strong> - Export data
+                </li>
+            </ul>
+            <p style="margin-top: 20px;">
+                <a href="http://localhost:8000/docs" target="_blank" class="btn">View API Documentation</a>
+            </p>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>Built with ❤️ for the LLM and developer community</p>
+        <p style="margin-top: 10px;">
+            <a href="https://github.com/SpaceTrev/space-scribe" target="_blank">GitHub</a> •
+            <a href="http://localhost:8000/docs" target="_blank">API Docs</a>
+        </p>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000/api/v1';
+
+        async function transcribeVideo() {
+            const videoUrl = document.getElementById('videoUrl').value.trim();
+
+            if (!videoUrl) {
+                showStatus('Please enter a YouTube URL', 'error');
+                return;
+            }
+
+            const btn = event.target;
+            btn.disabled = true;
+            btn.textContent = 'Transcribing...';
+
+            showLoader(true);
+            hideResult();
+            showStatus('Transcribing video... This may take a minute.', 'info');
+
+            try {
+                const response = await fetch(`${API_BASE}/transcribe`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        url: videoUrl,
+                        method: 'auto',
+                        save_to_db: true,
+                        process_nlp: true,
+                        extract_trading: true
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    showStatus('✓ Transcription completed successfully!', 'success');
+                    displayResult(data);
+                } else {
+                    showStatus(`Error: ${data.detail || 'Transcription failed'}`, 'error');
+                }
+            } catch (error) {
+                showStatus(`Error: ${error.message}`, 'error');
+            } finally {
+                showLoader(false);
+                btn.disabled = false;
+                btn.textContent = 'Transcribe';
+            }
+        }
+
+        function showStatus(message, type) {
+            const statusEl = document.getElementById('status');
+            statusEl.textContent = message;
+            statusEl.className = `status ${type}`;
+            statusEl.style.display = 'block';
+        }
+
+        function showLoader(show) {
+            document.getElementById('loader').style.display = show ? 'block' : 'none';
+        }
+
+        function hideResult() {
+            document.getElementById('result').style.display = 'none';
+        }
+
+        function displayResult(data) {
+            const resultEl = document.getElementById('result');
+
+            resultEl.innerHTML = `
+                <h3>Transcription Result</h3>
+                <div class="result-info">
+                    <div class="result-info-item">
+                        <strong>Video ID</strong>
+                        ${data.video_id}
+                    </div>
+                    <div class="result-info-item">
+                        <strong>Method</strong>
+                        ${data.method}
+                    </div>
+                    <div class="result-info-item">
+                        <strong>Language</strong>
+                        ${data.language}
+                    </div>
+                    <div class="result-info-item">
+                        <strong>Quality Score</strong>
+                        ${data.quality_score ? data.quality_score.toFixed(2) : 'N/A'}
+                    </div>
+                    <div class="result-info-item">
+                        <strong>Transcript Length</strong>
+                        ${data.transcript_length} characters
+                    </div>
+                    <div class="result-info-item">
+                        <strong>Chunks Created</strong>
+                        ${data.chunks_count}
+                    </div>
+                </div>
+                <p style="margin-top: 20px;">
+                    <button class="btn" onclick="viewFullTranscript('${data.video_id}')">
+                        View Full Transcript
+                    </button>
+                </p>
+            `;
+
+            resultEl.style.display = 'block';
+        }
+
+        async function viewFullTranscript(videoId) {
+            try {
+                const response = await fetch(`${API_BASE}/transcripts/${videoId}`);
+                const data = await response.json();
+
+                if (response.ok) {
+                    const resultEl = document.getElementById('result');
+                    const transcriptPreview = data.transcript.substring(0, 2000) +
+                        (data.transcript.length > 2000 ? '...' : '');
+
+                    resultEl.innerHTML += `
+                        <div style="margin-top: 20px;">
+                            <h4>Transcript Preview</h4>
+                            <div class="transcript-preview">${transcriptPreview}</div>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                showStatus(`Error loading transcript: ${error.message}`, 'error');
+            }
+        }
+
+        // Allow Enter key to submit
+        document.getElementById('videoUrl').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                transcribeVideo();
+            }
+        });
+    </script>
+</body>
+</html>

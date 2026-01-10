@@ -1,0 +1,106 @@
+api:
+  base_url: "http://localhost:8000"
+  api_key: "your-api-key-here"
+  timeout: 300
+  host: "0.0.0.0"
+  port: 8000
+  workers: 4
+
+transcription:
+  default_method: "auto"  # auto/api/whisper
+  whisper_model: "base"   # tiny/base/small/medium/large
+  chunk_size: 1000
+  overlap: 150
+  languages: ["en", "es", "fr", "de", "pt", "it", "ru", "ja", "ko", "zh"]
+  quality_threshold: 0.7
+
+storage:
+  database_url: "sqlite:///./spacescribe.db"  # or postgresql://user:pass@localhost/dbname
+  cache_enabled: true
+  cache_ttl: 3600
+  export_directory: "./exports"
+  temp_directory: "./temp"
+
+processing:
+  max_concurrent_jobs: 5
+  enable_nlp: true
+  extract_entities: true
+  auto_tag: true
+  nlp_model: "en_core_web_sm"
+  batch_size: 10
+
+redis:
+  host: "localhost"
+  port: 6379
+  db: 0
+  password: null
+
+celery:
+  broker_url: "redis://localhost:6379/0"
+  result_backend: "redis://localhost:6379/0"
+  task_time_limit: 3600
+  task_soft_time_limit: 3000
+
+security:
+  secret_key: "your-secret-key-change-this-in-production"
+  algorithm: "HS256"
+  access_token_expire_minutes: 30
+  api_key_header: "X-API-Key"
+
+rate_limiting:
+  enabled: true
+  requests_per_minute: 60
+  requests_per_hour: 1000
+
+logging:
+  level: "INFO"  # DEBUG/INFO/WARNING/ERROR/CRITICAL
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: "./logs/spacescribe.log"
+  max_size_mb: 100
+  backup_count: 5
+
+export:
+  formats:
+    - json
+    - csv
+    - txt
+    - markdown
+    - srt
+    - llm_training
+  include_metadata: true
+  include_chunks: true
+  include_tags: true
+  include_entities: true
+
+chunking:
+  strategies:
+    - time_based
+    - topic_based
+    - token_based
+  default_strategy: "token_based"
+  sizes: [500, 1000, 2000]
+  overlap_percent: 15
+
+trading_analysis:
+  enabled: true
+  indicators:
+    - "RSI"
+    - "MACD"
+    - "Bollinger Bands"
+    - "Moving Average"
+    - "Fibonacci"
+    - "Support/Resistance"
+  timeframes:
+    - "1min"
+    - "5min"
+    - "15min"
+    - "1hour"
+    - "4hour"
+    - "daily"
+    - "weekly"
+  instruments:
+    - "stocks"
+    - "forex"
+    - "crypto"
+    - "options"
+    - "futures"

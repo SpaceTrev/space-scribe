@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  # Main API service
+  api:
+    build: .
+    container_name: spacescribe-api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./exports:/app/exports
+      - ./logs:/app/logs
+      - ./spacescribe.db:/app/spacescribe.db
+    environment:
+      - DATABASE_URL=sqlite:///./spacescribe.db
+      - LOG_LEVEL=INFO
+    restart: unless-stopped
+    command: uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # PostgreSQL (optional, uncomment if needed)
+  # postgres:
+  #   image: postgres:15
+  #   container_name: spacescribe-postgres
+  #   environment:
+  #     - POSTGRES_DB=spacescribe
+  #     - POSTGRES_USER=spacescribe
+  #     - POSTGRES_PASSWORD=spacescribe
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   ports:
+  #     - "5432:5432"
+
+  # Redis (optional, for Celery)
+  # redis:
+  #   image: redis:7-alpine
+  #   container_name: spacescribe-redis
+  #   ports:
+  #     - "6379:6379"
+  #   volumes:
+  #     - redis_data:/data
+
+  # Celery worker (optional)
+  # worker:
+  #   build: .
+  #   container_name: spacescribe-worker
+  #   depends_on:
+  #     - redis
+  #     - postgres
+  #   environment:
+  #     - DATABASE_URL=postgresql://spacescribe:spacescribe@postgres/spacescribe
+  #     - CELERY_BROKER_URL=redis://redis:6379/0
+  #   command: celery -A api.tasks worker --loglevel=info
+
+  # Web interface (simple static server)
+  web:
+    image: nginx:alpine
+    container_name: spacescribe-web
+    ports:
+      - "3000:80"
+    volumes:
+      - ./web:/usr/share/nginx/html:ro
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
