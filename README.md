@@ -38,6 +38,20 @@ spacescribe init
 
 ### Basic Usage
 
+**🌐 Web Interface (Easiest!)**
+```bash
+# Start the server
+spacescribe server
+
+# Open your browser to: http://localhost:8000
+```
+✨ The web interface provides a beautiful, easy-to-use dashboard where you can:
+- Paste any YouTube URL and transcribe with one click
+- View real-time transcription progress
+- See transcript previews and metadata
+- No command-line experience needed!
+
+**💻 Command Line**
 ```bash
 # Transcribe a single video
 spacescribe transcribe "https://www.youtube.com/watch?v=VIDEO_ID"
@@ -50,8 +64,11 @@ spacescribe search "trading strategy"
 
 # Export all transcripts
 spacescribe export --format json
+```
 
-# Start API server
+**🔌 API Documentation**
+```bash
+# Start server and visit: http://localhost:8000/docs
 spacescribe server
 ```
 
@@ -126,8 +143,10 @@ Edit `config.yaml` to customize:
 # Build and run with docker-compose
 docker-compose up -d
 
-# Access API at http://localhost:8000
-# Access web interface at http://localhost:3000
+# Access everything at http://localhost:8000
+# - Web Interface: http://localhost:8000
+# - API Docs: http://localhost:8000/docs
+# - API: http://localhost:8000/api/v1
 ```
 
 ## Development

@@ -1,10 +1,12 @@
 """FastAPI main application"""
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
 from fastapi.exceptions import RequestValidationError
+from fastapi.staticfiles import StaticFiles
 import logging
 import time
+from pathlib import Path
 
 # Import routers
 from api.routes import transcribe, search, export, health
@@ -70,16 +72,37 @@ app.include_router(search.router, prefix="/api/v1", tags=["search"])
 app.include_router(export.router, prefix="/api/v1", tags=["export"])
 
 
-# Root endpoint
-@app.get("/")
-async def root():
-    return {
-        "name": "SpaceScribe API",
-        "version": "0.1.0",
-        "description": "YouTube video transcription platform",
-        "docs": "/docs",
-        "health": "/api/v1/health",
-    }
+# Mount static files for web interface
+web_dir = Path(__file__).parent.parent / "web"
+if web_dir.exists():
+    app.mount("/static", StaticFiles(directory=str(web_dir)), name="static")
+
+    # Serve the web interface at root
+    @app.get("/")
+    async def serve_web_interface():
+        """Serve the web interface"""
+        index_file = web_dir / "index.html"
+        if index_file.exists():
+            return FileResponse(str(index_file))
+        else:
+            return {
+                "name": "SpaceScribe API",
+                "version": "0.1.0",
+                "description": "YouTube video transcription platform",
+                "docs": "/docs",
+                "health": "/api/v1/health",
+            }
+else:
+    # Fallback if web directory doesn't exist
+    @app.get("/")
+    async def root():
+        return {
+            "name": "SpaceScribe API",
+            "version": "0.1.0",
+            "description": "YouTube video transcription platform",
+            "docs": "/docs",
+            "health": "/api/v1/health",
+        }
 
 
 # Startup event
