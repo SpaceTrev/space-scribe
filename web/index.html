@@ -57,6 +57,34 @@
             margin-bottom: 30px;
         }
 
+        .config-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .config-row label {
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .config-row input {
+            flex: 1;
+            min-width: 260px;
+            padding: 10px 14px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .config-row input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
         .transcribe-form input {
             flex: 1;
             padding: 15px 20px;
@@ -95,6 +123,23 @@
         .btn:disabled {
             opacity: 0.6;
             cursor: not-allowed;
+        }
+
+        .btn.secondary {
+            background: #f1f3f5;
+            color: #333;
+            border: 2px solid #e0e0e0;
+        }
+
+        .btn.secondary:hover {
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
+
+        .btn-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 20px;
         }
 
         .features {
@@ -220,6 +265,14 @@
             text-decoration: none;
             border-bottom: 1px solid white;
         }
+
+        @media (max-width: 768px) {
+            .transcribe-form,
+            .config-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
     </style>
 </head>
 <body>
@@ -234,6 +287,16 @@
         <div class="card">
             <h2 style="margin-bottom: 20px; color: #667eea;">Quick Start: Transcribe a Video</h2>
 
+            <div class="config-row">
+                <label for="apiBase">API Base URL</label>
+                <input
+                    type="text"
+                    id="apiBase"
+                    placeholder="https://your-api.example.com/api/v1"
+                >
+                <button class="btn secondary" onclick="saveApiBase()">Save</button>
+            </div>
+
             <div class="transcribe-form">
                 <input
                     type="text"
@@ -241,7 +304,7 @@
                     placeholder="Enter YouTube URL or Video ID..."
                     value=""
                 >
-                <button class="btn" onclick="transcribeVideo()">Transcribe</button>
+                <button class="btn" id="transcribeBtn" onclick="transcribeVideo(event)">Transcribe</button>
             </div>
 
             <div id="status" class="status"></div>
@@ -310,9 +373,40 @@
     </div>
 
     <script>
-        const API_BASE = 'http://localhost:8000/api/v1';
+        const DEFAULT_API_BASE = 'http://localhost:8000/api/v1';
+        const API_BASE_KEY = 'spacescribe_api_base';
 
-        async function transcribeVideo() {
+        function getApiBase() {
+            const params = new URLSearchParams(window.location.search);
+            const fromQuery = params.get('apiBase');
+            if (fromQuery) {
+                return fromQuery;
+            }
+            return localStorage.getItem(API_BASE_KEY) || DEFAULT_API_BASE;
+        }
+
+        function setApiBase(value) {
+            localStorage.setItem(API_BASE_KEY, value);
+        }
+
+        function saveApiBase() {
+            const input = document.getElementById('apiBase');
+            const value = input.value.trim();
+            if (!value) {
+                showStatus('Please enter a valid API base URL.', 'error');
+                return;
+            }
+            setApiBase(value);
+            showStatus('API base URL saved.', 'success');
+        }
+
+        function apiUrl(path) {
+            const base = getApiBase().replace(/\/$/, '');
+            const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+            return `${base}${normalizedPath}`;
+        }
+
+        async function transcribeVideo(e) {
             const videoUrl = document.getElementById('videoUrl').value.trim();
 
             if (!videoUrl) {
@@ -320,7 +414,7 @@
                 return;
             }
 
-            const btn = event.target;
+            const btn = (e && e.target) ? e.target : document.getElementById('transcribeBtn');
             btn.disabled = true;
             btn.textContent = 'Transcribing...';
 
@@ -329,7 +423,7 @@
             showStatus('Transcribing video... This may take a minute.', 'info');
 
             try {
-                const response = await fetch(`${API_BASE}/transcribe`, {
+                const response = await fetch(apiUrl('/transcribe'), {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -406,11 +500,17 @@
                         ${data.chunks_count}
                     </div>
                 </div>
-                <p style="margin-top: 20px;">
+                <div class="btn-row">
                     <button class="btn" onclick="viewFullTranscript('${data.video_id}')">
                         View Full Transcript
                     </button>
-                </p>
+                    <button class="btn secondary" onclick="downloadTranscript('${data.video_id}', 'txt')">
+                        Download .txt
+                    </button>
+                    <button class="btn secondary" onclick="downloadTranscript('${data.video_id}', 'json')">
+                        Download .json
+                    </button>
+                </div>
             `;
 
             resultEl.style.display = 'block';
@@ -418,18 +518,19 @@
 
         async function viewFullTranscript(videoId) {
             try {
-                const response = await fetch(`${API_BASE}/transcripts/${videoId}`);
+                const response = await fetch(apiUrl(`/transcripts/${videoId}`));
                 const data = await response.json();
 
                 if (response.ok) {
                     const resultEl = document.getElementById('result');
                     const transcriptPreview = data.transcript.substring(0, 2000) +
                         (data.transcript.length > 2000 ? '...' : '');
+                    const safePreview = escapeHtml(transcriptPreview);
 
                     resultEl.innerHTML += `
                         <div style="margin-top: 20px;">
                             <h4>Transcript Preview</h4>
-                            <div class="transcript-preview">${transcriptPreview}</div>
+                            <div class="transcript-preview">${safePreview}</div>
                         </div>
                     `;
                 }
@@ -438,11 +539,65 @@
             }
         }
 
+        async function downloadTranscript(videoId, format) {
+            try {
+                const response = await fetch(apiUrl(`/transcripts/${videoId}`));
+                const data = await response.json();
+
+                if (!response.ok) {
+                    showStatus(`Error downloading transcript: ${data.detail || 'Request failed'}`, 'error');
+                    return;
+                }
+
+                if (format === 'json') {
+                    downloadFile(
+                        JSON.stringify(data, null, 2),
+                        `spacescribe-${videoId}.json`,
+                        'application/json'
+                    );
+                    return;
+                }
+
+                downloadFile(
+                    data.transcript || '',
+                    `spacescribe-${videoId}.txt`,
+                    'text/plain'
+                );
+            } catch (error) {
+                showStatus(`Error downloading transcript: ${error.message}`, 'error');
+            }
+        }
+
+        function downloadFile(contents, filename, mimeType) {
+            const blob = new Blob([contents], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
+
+        function escapeHtml(value) {
+            return value
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
         // Allow Enter key to submit
         document.getElementById('videoUrl').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
-                transcribeVideo();
+                transcribeVideo(e);
             }
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('apiBase').value = getApiBase();
         });
     </script>
 </body>
